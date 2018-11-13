@@ -1,0 +1,22 @@
+{
+  "name": "gb.pack-cli",
+  "version": "1.0.0",
+  "description": "gb code pack tool",
+  "main": "index.js",
+  "bin": {
+    "gbpack": "./bin/cmd.js"
+  },
+  "scripts": {
+    "start": "npx ./bin/cmd.js"
+  },
+  "author": "keydone",
+  "license": "MIT",
+  "devDependencies": {
+    "commander": "^2.19.0",
+    "npx": "^10.2.0",
+    "rollup": "^0.67.1"
+  },
+  "dependencies": {
+    "gb.rollup-cli-temp": "^1.0.1"
+  }
+}
