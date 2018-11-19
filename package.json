@@ -19,9 +19,10 @@
     "npx": "^10.2.0",
     "ora": "^3.0.0",
     "prompts": "^1.2.0",
-    "rollup": "^0.67.1"
+    "rollup": "^0.67.3"
   },
   "dependencies": {
-    "gb.rollup-cli-temp": "^1.0.1"
-  }
+    "gb.rollup-cli-temp": "^1.0.4"
+  },
+  "tempDependencies": "gb.rollup-cli-temp"
 }
