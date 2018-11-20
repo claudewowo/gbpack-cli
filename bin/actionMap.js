@@ -70,7 +70,7 @@ const actionMap = {
             if (pathExists(resolve(`node_modules/${dependency}`))) {
                 console.log(warning("\n打包依赖已安装, 正在准备复制...\nDependencies have been installed, hold on ...\n"));
 
-                const projectPath = resolve(defaultName);
+                const projectPath = resolve(`${process.cwd()}/${defaultName}`);
 
                 if (existsSync(projectPath)) {
                     const response = await prompts({
@@ -114,7 +114,7 @@ const actionMap = {
 
                 try {
                     // 复制项目模版
-                    await copy(resolve(`node_modules/${dependency}`), resolve(defaultName));
+                    await copy(resolve(`node_modules/${dependency}`), projectPath);
                     console.log('项目创建成功!');
 
                 } catch (err) {
