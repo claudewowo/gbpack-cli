@@ -1,28 +1,20 @@
 {
   "name": "gb.pack-cli",
-  "version": "1.0.0",
+  "version": "1.1.2",
   "description": "gb code pack tool",
-  "main": "index.js",
   "bin": {
     "gbpack": "./bin/cmd.js"
   },
-  "scripts": {
-    "start": "npx ./bin/cmd.js init"
-  },
   "author": "keydone",
   "license": "MIT",
-  "devDependencies": {
+  "dependencies": {
     "chalk": "^2.4.1",
     "commander": "^2.19.0",
     "fs-extra": "^7.0.1",
-    "inquirer": "^6.2.0",
-    "npx": "^10.2.0",
+    "gb.rollup-cli-temp": "^1.0.4",
     "ora": "^3.0.0",
     "prompts": "^1.2.0",
     "rollup": "^0.67.3"
-  },
-  "dependencies": {
-    "gb.rollup-cli-temp": "^1.0.4"
   },
   "tempDependencies": "gb.rollup-cli-temp"
 }
