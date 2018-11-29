@@ -5,16 +5,22 @@
   "bin": {
     "gbpack": "./bin/cmd.js"
   },
+  "scripts": {
+    "init": "node ./bin/cmd.js init www"
+  },
   "author": "keydone",
   "license": "MIT",
+  "preferGlobal": true,
   "dependencies": {
+    "boxen": "^2.0.0",
     "chalk": "^2.4.1",
     "commander": "^2.19.0",
     "fs-extra": "^7.0.1",
-    "gb.rollup-cli-temp": "^1.0.4",
+    "gb.rollup-cli-temp": "^1.0.5",
     "ora": "^3.0.0",
     "prompts": "^1.2.0",
-    "rollup": "^0.67.3"
+    "rollup": "^0.67.3",
+    "shelljs": "^0.8.3"
   },
   "tempDependencies": "gb.rollup-cli-temp"
 }

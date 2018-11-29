@@ -1,22 +1,25 @@
 
 const {
-    pathExists,
     emptyDir,
     mkdirs,
     copy,
 } = require("fs-extra");
-const { existsSync } = require('fs');
+const {
+    existsSync,
+    writeFileSync,
+} = require('fs');
 const { spawnSync } = require('child_process');
 const ora = require("ora");
 const path = require("path");
+const boxen = require('boxen');
 const chalk = require('chalk');                     // 彩色命令行提示
 const prompts = require('prompts');                 // 命令行提示框交互
-const warning = chalk.keyword('orange');
+const shell = require('shelljs');
 const package = require('../package.json');
+const spinner = ora(chalk.yellow('正在处理... hold on...'));
 const { platform, argv } = process;
-const spinner = ora('正在处理...(hold on)  ');
-const tips = chalk.blue;
 
+const warning = chalk.cyanBright;
 const resolve = p => path.resolve(__dirname, "../", p);
 const dependency = package.tempDependencies;
 
@@ -24,7 +27,10 @@ const dependency = package.tempDependencies;
 
 const actionMap = {
     init: {
-        options: ['-l, --local', 'do not check update'],
+        options: [
+            ['-l, --local', 'do not check update when create app'],
+            ['-i, --install', 'install dependencies after create app'],
+        ],
         description: '初始化模版        (init app-template)',
         examples: [''],
         action: async (args) => {
@@ -32,7 +38,7 @@ const actionMap = {
             if (typeof args === 'string') {
                 const arg = /\/|\\|:|\*|\?|"|'|<|>|\|/g.test(args);
                 if (arg) {
-                    console.log(chalk.bold.red('项目名称不能包含 \\/:*?"<>| 等特殊字符!'));
+                    console.log(chalk.bgRed('项目名称不能包含 \\/:*?"<>| 等特殊字符!'));
                     console.log(warning('请重新运行脚手架命令'));
                     return;
                 }
@@ -66,9 +72,12 @@ const actionMap = {
 
             // 项目默认名称
             const defaultName = typeof args === 'string' ? args : 'myproject';
+            // 全局环境 vs 当前目录下的依赖
+            const gbEnv = path.resolve(__dirname, "../../", `${dependency}`);
+            const dependencyPath = existsSync(gbEnv) ? gbEnv : resolve(`node_modules/${dependency}`);
 
-            if (pathExists(resolve(`node_modules/${dependency}`))) {
-                console.log(warning("\n打包依赖已安装, 正在准备复制...\nDependencies have been installed, hold on ...\n"));
+            if (existsSync(dependencyPath)) {
+                console.log("\n打包依赖已安装, 正在准备复制...\nDependencies have been installed, hold on ...\n");
 
                 const projectPath = resolve(`${process.cwd()}/${defaultName}`);
 
@@ -83,20 +92,30 @@ const actionMap = {
                         ],
                     });
                     if (response.overwrite === 'n') {
-                        return console.log('>_< 请重新运行命令');
+                        return console.log('>_< 请重新运行命令\n');
                     }
 
                     spinner.start();
+
                     // 检查模版是否有更新
-                    const template = require(resolve(`node_modules/${dependency}/package.json`));
+                    const template = require(resolve(`${dependencyPath}/package.json`));
                     const localVersion = +template.version.replace(/\./g, '');
 
                     const repos = spawnSync(platform === 'win32' ? 'npm.cmd' : 'npm', ['view', `${dependency}`, 'version'])
                     const cloudVersion = +repos.stdout.toString().replace('\n', '').replace('\r\n', '').replace(/\./g, '');
 
                     // 有更新
-                    if (cloudVersion > localVersion) {
-                        console.log(warning(`${dependency} 有新版可用, 建议升级模版后重新创建项目`));
+                    if (!args.local && cloudVersion > localVersion) {
+                        console.log('\n');
+                        console.log(boxen(`打包模版 ${dependency} 有新版可用\n${chalk.white('建议升级模版后重新创建项目')}\nnpm i ${dependency} -g`,
+                            {
+                                padding: 1,
+                                borderColor: 'red',
+                                borderStyle: 'double',
+                                backgroundColor: '#808080',
+                            }
+                        ));
+                        console.log('\n');
                     }
 
                     // 先清空之前的文件夹
@@ -108,14 +127,41 @@ const actionMap = {
 
                 }
 
-                console.log(warning("准备创建项目模板\n"));
-                await mkdirs(resolve(defaultName));
-                // console.log('文件夹创建完成\n');
+                spinner.start();
+                console.log("\n\n- 准备创建项目模板...\n");
 
                 try {
+
+                    await mkdirs(resolve(defaultName));
+                    // console.log('文件夹创建完成\n');
                     // 复制项目模版
-                    await copy(resolve(`node_modules/${dependency}`), projectPath);
-                    console.log('项目创建成功!');
+                    await copy(resolve(dependencyPath), projectPath);
+
+                    // 更改包名等信息
+                    const packagePath = resolve(`${projectPath}/package.json`);
+                    const packageJson = require(packagePath);
+                    const packageFile = {
+                        description: '',
+                        scripts: '',
+                        devDependencies: '',
+                        keywords: '',
+                        author: '',
+                        license: '',
+                        dependencies: '',
+                    };
+
+                    for (let item in packageFile) {
+                        packageFile[item] = packageJson[item];
+                    }
+
+                    Object.assign(packageFile, {
+                        name: defaultName,
+                        version: '1.0.0',
+                        main: '',
+                        module: '',
+                    });
+
+                    writeFileSync(packagePath, JSON.stringify(packageFile, false, 4));
 
                 } catch (err) {
                     console.error(err)
@@ -126,18 +172,30 @@ const actionMap = {
 
                 spinner.stop();
 
-                spinner.succeed('处理完成! success!\n\n');
+                spinner.succeed('项目创建成功! success!\n');
 
-                console.log(tips(`tips:\n1. cd ${defaultName}  访问你的项目\n2. npm install  安装项目依赖`));
+                console.log(boxen(`tips:\n1. ${chalk.greenBright(`cd ${defaultName}`)}  访问你的项目\n2. ${chalk.greenBright('npm install')}  安装项目依赖`,
+                    {
+                        padding: 1,
+                        borderColor: 'green',
+                        borderStyle: 'round',
+                    }
+                ));
+
+                shell.cd(`${defaultName}`);
+
+                const { code } = shell.exec('git init');
+                if (code === 0 && args.install) {
+                    shell.exec('npm install');
+                }
 
             } else {
-                console.log(warning("去安装 gb.rollup-cli-temp 吧\nPlease install gb.rollup-cli-temp first!\n"));
+                console.log(warning(`去全局安装 ${dependency} 吧\nPlease npm install ${dependency} -g first!\n`));
             }
         }
     },
     config: {
         alias: 'c',
-        options: ['', ''],
         description: '配置 .gbpackrc    (config .gbpackrc)',
         examples: [
             'gbpack config set <key> <value>',
@@ -146,7 +204,6 @@ const actionMap = {
         ]
     },
     '*': {
-        options: ['', ''],
         description: '命令错误          (command error)',
     }
 };
